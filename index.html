@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Color Picker</title>
+    <style>
+        :root {}
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            /* font: optional; */
+        }
+        div {
+            display: block;
+        }
+
+        .flex-row {
+            display: flex;
+            flex-direction: row;
+            flex-grow: 1;
+            width: 100%;
+        }
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            width: 0; /* need dummy width for flex-grow to work */
+            height: 100%;
+        }
+
+        #main {
+            border: 4px solid black;
+            /* border-radius: 10px; */
+            display: inline-block;
+            position: absolute;
+            width: 80vmin;
+            height: 50vmin;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+        }
+        #select-saturation-lightness {
+            /* border: 1px solid red; */
+            display: block;
+            width: 100%;
+            height: 94%;
+        }
+        #select-hue {
+            /* border: 1px solid blue; */
+            width: 100%;
+            flex-grow: 1; /* consume remaining space */
+        }
+        #display-color {
+            /* border: 1px solid green; */
+            width: 30%;
+            height: 100%;
+        }
+
+        #color-rect {
+            display: inline-block;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #hue-slider-bg {
+            background: linear-gradient(to right,hsl(0,100%,50%),hsl(60,100%,50%),hsl(120,100%,50%),hsl(180,100%,50%),hsl(240,100%,50%),hsl(300,100%,50%),hsl(360,100%,50%));
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id='main'>
+        <div class='flex-row' style='width:100%;height:100%;'>
+            <div class='flex-col'>
+                <div id='select-saturation-lightness'>
+                    <canvas id='color-rect'></canvas>
+                </div>
+                <div id='select-hue'>
+                    <div id='hue-slider-bg'></div>
+                    <div id='hue-slider-handle'></div>
+                </div>
+            </div>
+            <div id='display-color'></div>
+        </div>
+    </div>
+
+    <script type='text/javascript'>
+        const container = document.getElementById('select-saturation-lightness');
+        const slider = document.getElementById('hue-slider-bg');
+        const handle = document.getElementById('hue-slider-handle');
+        const cv = document.getElementById('color-rect');
+        const ctx = cv.getContext('2d');
+
+        ////
+
+        let dragging = false;
+
+        let color = {
+            h : 0,
+            s : '50%',
+            l : '50%',
+            setH : (p = 0) => {
+                p = Math.min(Math.max(0,p),1); // clamp
+                color.h = 360 * p;
+            },
+            setSV : (ps = 0, pl = 0) => {
+                ps = Math.min(Math.max(0,ps),1); // clamp
+                pl = Math.min(Math.max(0,pl),1); // clamp
+                color.s = (100 * ps) + '%';
+                color.l = (100 * pl) + '%';
+            }
+        };
+
+        ////
+
+        function resizeColorRect () {
+            cv.width = container.clientWidth;
+            cv.height = container.clientHeight;
+            drawColorRect(); // resizing wipes canvas, so redraw immediately
+        }
+
+        function drawColorRect (hue = color.h) {
+            let brightness = ctx.createLinearGradient(0, 0, 0, cv.height);
+            brightness.addColorStop(0, 'white');
+            brightness.addColorStop(1, 'black');
+
+            let saturation = ctx.createLinearGradient(0, 0, cv.width, 0);
+            saturation.addColorStop(0, 'hsla(' + hue + ',100%,50%,0)');
+            saturation.addColorStop(1, 'hsla(' + hue + ',100%,50%,1)');
+
+            ctx.fillStyle = brightness;
+            ctx.fillRect(0, 0, cv.width, cv.height);
+
+            ctx.fillStyle = saturation;
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        function selectHue (mouseEvent) {
+            const b = slider.getBoundingClientRect();
+            const x = mouseEvent.clientX - b.left;
+            color.setH(x / b.width);
+            drawColorRect(color.h);
+        }
+
+        // resize
+        resizeColorRect();
+        window.addEventListener('resize', resizeColorRect);
+        
+        // mouse click/drag
+        slider.addEventListener('mousedown', (e) => {
+            dragging = true;
+            selectHue(e);
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (dragging) selectHue(e);
+        });
+        window.addEventListener('mouseup', (e) => {
+            dragging = false;
+        });
+    </script>
+
+</body>
+</html>
