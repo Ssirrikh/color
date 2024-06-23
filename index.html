@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <title>Color Picker</title>
     <style>
         :root {}
@@ -9,7 +9,7 @@
             padding: 0;
             margin: 0;
             box-sizing: border-box;
-            /* font: optional; */
+            font-family: Helvetica, sans-serif;
         }
         div {
             display: block;
@@ -30,9 +30,12 @@
         }
 
         #main {
-            border: 4px solid black;
-            /* border-radius: 10px; */
-            display: inline-block;
+            background-color: #333;
+            /* border: 4px solid black; */
+            border-radius: 8px;
+            filter: drop-shadow(0 0 4px #000);
+            /* display: inline-block; */
+            overflow: hidden;
             position: absolute;
             width: 80vmin;
             height: 50vmin;
@@ -40,6 +43,18 @@
             left: 50%;
             transform: translate(-50%,-50%);
         }
+        #header-bar {
+            color: #ddd;
+            background-color: #222;
+            /* filter: drop-shadow(0 0 1px #000); */
+            padding: 0.75vmin 1vmin;
+            font-size: 2.25vmin;
+            z-index: 2;
+        }
+
+
+
+
         #select-saturation-lightness {
             /* border: 1px solid red; */
             display: block;
@@ -71,8 +86,16 @@
 </head>
 <body>
 
-    <div id='main'>
-        <div class='flex-row' style='width:100%;height:100%;'>
+    <!-- curves generated with https://getwaves.io -->
+    <svg id='curves' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'>
+        <path id='curve-bot' fill='#0099ff' fill-opacity='1' d='M 0 92 L 80 108 C 160 124 320 156 480 156 C 640 156 800 124 960 97.3 C 1120 71 1280 49 1360 38.7 L 1440 28 L 1440 0 L 0 0 Z'></path>
+        <path id='curve-mid' fill='#0099ff' fill-opacity='1' d='M 0 168 L 80 157.3 C 160 147 320 125 480 93.3 C 640 61 800 19 960 18.7 C 1120 19 1280 61 1360 82.7 L 1440 104 L 1440 0 L 0 0 Z'></path>
+        <path id='curve-top' fill='#222222' fill-opacity='1' d='M 0 204 L 25 210 C 150 240 270 130 335 90 C 400 50 466 20 566 10 L 666 0 L 0 0 Z'></path>
+    </svg>
+
+    <div id='main' class='flex-col'>
+        <div id='header-bar'>Color Picker</div>
+        <div class='flex-row' style='width:100%;flex-grow:1;'>
             <div class='flex-col'>
                 <div id='select-saturation-lightness'>
                     <canvas id='color-rect'></canvas>
@@ -87,6 +110,9 @@
     </div>
 
     <script type='text/javascript'>
+        const curveTop = document.getElementById('curve-top');
+        const curveMid = document.getElementById('curve-mid');
+        const curveBot = document.getElementById('curve-bot');
         const container = document.getElementById('select-saturation-lightness');
         const slider = document.getElementById('hue-slider-bg');
         const handle = document.getElementById('hue-slider-handle');
@@ -110,6 +136,12 @@
                 pl = Math.min(Math.max(0,pl),1); // clamp
                 color.s = (100 * ps) + '%';
                 color.l = (100 * pl) + '%';
+            },
+            getHSL : () => {
+                return `hsl(${color.h},100%,50%)`;
+            },
+            getHueSet : (delta = 15) => {
+                return [`hsl(${color.h-delta},50%,90%)`,`hsl(${color.h+delta},90%,30%)`,`hsl(${color.h},50%,5%)`];
             }
         };
 
@@ -139,12 +171,23 @@
             ctx.globalCompositeOperation = 'source-over';
         }
 
+        function refreshUIColors () {
+            const analogues = color.getHueSet(5); // [white,dark,black]
+            curveTop.setAttribute('fill', analogues[2]); // black
+            curveMid.setAttribute('fill', color.getHSL()); // hue
+            curveBot.setAttribute('fill', analogues[1]); // dark hue
+            document.body.style.backgroundColor = analogues[0]; // white
+        }
         function selectHue (mouseEvent) {
             const b = slider.getBoundingClientRect();
             const x = mouseEvent.clientX - b.left;
             color.setH(x / b.width);
             drawColorRect(color.h);
+            refreshUIColors();
         }
+
+        // init
+        refreshUIColors();
 
         // resize
         resizeColorRect();
