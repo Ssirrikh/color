@@ -31,10 +31,8 @@
 
         #main {
             background-color: #333;
-            /* border: 4px solid black; */
             border-radius: 8px;
-            filter: drop-shadow(0 0 4px #000);
-            /* display: inline-block; */
+            filter: drop-shadow(0 0 4px #00000088);
             overflow: hidden;
             position: absolute;
             width: 80vmin;
@@ -44,7 +42,7 @@
             transform: translate(-50%,-50%);
         }
         #header-bar {
-            color: #ddd;
+            color: #bbb;
             background-color: #222;
             /* filter: drop-shadow(0 0 1px #000); */
             padding: 0.75vmin 1vmin;
@@ -58,6 +56,7 @@
         #select-saturation-lightness {
             /* border: 1px solid red; */
             display: block;
+            position: relative; /* dummy position so color-handle can position itself correctly */
             width: 100%;
             height: 94%;
         }
@@ -78,6 +77,19 @@
             width: 100%;
             height: 100%;
         }
+        #color-handle {
+            background-color: #ff0000;
+            border: 2px solid black;
+            border-radius: 50%;
+            /* filter: drop-shadow(0 0 1px #000000); */
+            display: inline-block;
+            position: absolute;
+            width: 3vmin;
+            height: 3vmin;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+        }
         #hue-slider-bg {
             background: linear-gradient(to right,hsl(0,100%,50%),hsl(60,100%,50%),hsl(120,100%,50%),hsl(180,100%,50%),hsl(240,100%,50%),hsl(300,100%,50%),hsl(360,100%,50%));
             height: 100%;
@@ -86,7 +98,7 @@
 </head>
 <body>
 
-    <!-- curves generated with https://getwaves.io -->
+    <!-- curves constructed with https://yqnn.github.io/svg-path-editor -->
     <svg id='curves' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'>
         <path id='curve-bot' fill='#0099ff' fill-opacity='1' d='M 0 92 L 80 108 C 160 124 320 156 480 156 C 640 156 800 124 960 97.3 C 1120 71 1280 49 1360 38.7 L 1440 28 L 1440 0 L 0 0 Z'></path>
         <path id='curve-mid' fill='#0099ff' fill-opacity='1' d='M 0 168 L 80 157.3 C 160 147 320 125 480 93.3 C 640 61 800 19 960 18.7 C 1120 19 1280 61 1360 82.7 L 1440 104 L 1440 0 L 0 0 Z'></path>
@@ -99,6 +111,7 @@
             <div class='flex-col'>
                 <div id='select-saturation-lightness'>
                     <canvas id='color-rect'></canvas>
+                    <div id='color-handle'></div>
                 </div>
                 <div id='select-hue'>
                     <div id='hue-slider-bg'></div>
@@ -115,35 +128,62 @@
         const curveBot = document.getElementById('curve-bot');
         const container = document.getElementById('select-saturation-lightness');
         const slider = document.getElementById('hue-slider-bg');
-        const handle = document.getElementById('hue-slider-handle');
+        const handleHue = document.getElementById('hue-slider-handle');
+        const handleSaturationLightness = document.getElementById('color-handle');
         const cv = document.getElementById('color-rect');
         const ctx = cv.getContext('2d');
 
         ////
 
-        let dragging = false;
-
         let color = {
-            h : 0,
-            s : '50%',
-            l : '50%',
+            h : 0, // on [0,360] deg
+            s : 1.0, // on [0,1]
+            v : 0.5, // on [0,1]
             setH : (p = 0) => {
                 p = Math.min(Math.max(0,p),1); // clamp
                 color.h = 360 * p;
             },
-            setSV : (ps = 0, pl = 0) => {
-                ps = Math.min(Math.max(0,ps),1); // clamp
-                pl = Math.min(Math.max(0,pl),1); // clamp
-                color.s = (100 * ps) + '%';
-                color.l = (100 * pl) + '%';
+            setSV : (ps = 0, pv = 0) => {
+                color.s = Math.min(Math.max(0,ps),1);
+                color.v = Math.min(Math.max(0,pv),1);
+                console.log(`s ${ps.toFixed(3)}, v ${pv.toFixed(3)}`);
+            },
+            getHSV : () => {
+                return hsvStr(color.h,color.s,color.v);
             },
             getHSL : () => {
-                return `hsl(${color.h},100%,50%)`;
+                return hslStr(...hsv2hsl(color.h,color.s,color.v));
             },
-            getHueSet : (delta = 15) => {
-                return [`hsl(${color.h-delta},50%,90%)`,`hsl(${color.h+delta},90%,30%)`,`hsl(${color.h},50%,5%)`];
+            getHueSet : (delta = 0) => {
+                return [`hsl(${color.h-delta},50%,90%)`,`hsl(${color.h},100%,50%)`,`hsl(${color.h+delta},80%,18%)`,`hsl(${color.h},50%,5%)`]; // [white,hue,dark,black]
             }
         };
+
+        function hslStr (h,s,l,round=false) {
+            return (round) // [0, 1.0, 0.5] -> [0, 100%, 50%]
+                ? `hsl(${h},${(100*s).toFixed(0)}%,${(100*l).toFixed(0)}%)`
+                : `hsl(${h},${100*s}%,${100*l}%)`;
+        }
+        function hsvStr (h,s,v,round=false) {
+            return (round) // [0, 1.0, 0.5] -> [0, 100%, 50%]
+                ? `hsv(${h},${(100*s).toFixed(0)}%,${(100*v).toFixed(0)}%)`
+                : `hsv(${h},${100*s}%,${100*v}%)`;
+        }
+
+        function hsv2hsl (h,s,v) {
+            // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_HSL
+            let l = v * (1 - s/2);
+            if (l !== 0) { // [l == 0] => [s == 0]
+                if (l === 1) {
+                    s = 0; // [l == 1] => [s == 0]
+                } else if (l < 0.5) {
+                    s = s * v / (l*2); // [l < 0.5] => [l > 1-l] => [Math.min(l,1-l) === l]
+                } else {
+                    s = s * v / (2 - l*2); // [l >= 0.5] => [l <= 1-l] => [Math.min(l,1-l) === 1-l]
+                }
+            }
+            return [h,s,l];
+        }
 
         ////
 
@@ -172,18 +212,32 @@
         }
 
         function refreshUIColors () {
-            const analogues = color.getHueSet(5); // [white,dark,black]
-            curveTop.setAttribute('fill', analogues[2]); // black
-            curveMid.setAttribute('fill', color.getHSL()); // hue
-            curveBot.setAttribute('fill', analogues[1]); // dark hue
-            document.body.style.backgroundColor = analogues[0]; // white
+            const [white,hue,dark,black] = color.getHueSet(5); // [white,hue,dark,black]
+            curveTop.setAttribute('fill', black); // black
+            curveMid.setAttribute('fill', hue); // hue
+            curveBot.setAttribute('fill', dark); // dark hue
+            document.body.style.backgroundColor = white; // white
         }
         function selectHue (mouseEvent) {
             const b = slider.getBoundingClientRect();
             const x = mouseEvent.clientX - b.left;
+            // update color
             color.setH(x / b.width);
+            // refresh UI
             drawColorRect(color.h);
+            handleSaturationLightness.style.backgroundColor = color.getHSL();
             refreshUIColors();
+        }
+        function selectSaturationValue (mouseEvent) {
+            const b = container.getBoundingClientRect();
+            const x = mouseEvent.clientX - b.left;
+            const y = mouseEvent.clientY - b.top;
+            // update color
+            color.setSV(x/b.width, (b.height-y)/b.height);
+            // refresh UI
+            handleSaturationLightness.style.left = (100 * x/b.width) + '%';
+            handleSaturationLightness.style.top = (100 * y/b.height) + '%';
+            handleSaturationLightness.style.backgroundColor = color.getHSL();
         }
 
         // init
@@ -194,15 +248,23 @@
         window.addEventListener('resize', resizeColorRect);
         
         // mouse click/drag
+        let draggingHue = false;
+        let draggingSaturationValue = false;
+        container.addEventListener('mousedown', (e) => {
+            draggingSaturationValue = true;
+            selectSaturationValue(e);
+        });
         slider.addEventListener('mousedown', (e) => {
-            dragging = true;
+            draggingHue = true;
             selectHue(e);
         });
         window.addEventListener('mousemove', (e) => {
-            if (dragging) selectHue(e);
+            if (draggingSaturationValue) selectSaturationValue(e);
+            else if (draggingHue) selectHue(e);
         });
         window.addEventListener('mouseup', (e) => {
-            dragging = false;
+            draggingHue = false;
+            draggingSaturationValue = false;
         });
     </script>
 
