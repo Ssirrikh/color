@@ -4,7 +4,12 @@
     <meta charset='utf-8'>
     <title>Color Picker</title>
     <style>
-        :root {}
+        :root {
+            --text-light: #e8eaed;
+            --font-medium: 2vmin;
+            --font-large: 2.5vmin;
+        }
+
         * {
             padding: 0;
             margin: 0;
@@ -14,6 +19,13 @@
         div {
             display: block;
         }
+        input {
+            /* strip default formatting */
+            border: none;
+            outline: none;
+        }
+
+        /* ******************************* */
 
         .flex-row {
             display: flex;
@@ -30,7 +42,7 @@
         }
 
         #main {
-            background-color: #333;
+            background-color: #444;
             border-radius: 8px;
             filter: drop-shadow(0 0 4px #00000088);
             overflow: hidden;
@@ -42,11 +54,12 @@
             transform: translate(-50%,-50%);
         }
         #header-bar {
-            color: #bbb;
+            color: var(--text-light);
             background-color: #222;
+            border-bottom: 1px solid #555;
             /* filter: drop-shadow(0 0 1px #000); */
             padding: 0.75vmin 1vmin;
-            font-size: 2.25vmin;
+            font-size: var(--font-large);
             z-index: 2;
         }
 
@@ -56,22 +69,21 @@
         #select-saturation-lightness {
             /* border: 1px solid red; */
             display: block;
-            position: relative; /* dummy position so color-handle can position itself correctly */
+            position: relative; /* need dummy position so <color-handle> can position itself correctly */
             width: 100%;
             height: 94%;
         }
         #select-hue {
-            /* border: 1px solid blue; */
             width: 100%;
             flex-grow: 1; /* consume remaining space */
         }
         #display-color {
-            /* border: 1px solid green; */
+            color: var(--text-light);
             width: 30%;
             height: 100%;
         }
 
-        #color-rect {
+        #saturation-lightness-rect {
             display: inline-block;
             position: relative;
             width: 100%;
@@ -79,13 +91,12 @@
         }
         #color-handle {
             background-color: #ff0000;
-            border: 2px solid black;
-            border-radius: 50%;
-            /* filter: drop-shadow(0 0 1px #000000); */
+            border: 1px solid white; /* double border to both light/dark contrast */
+            outline: 1px solid black;
             display: inline-block;
             position: absolute;
-            width: 3vmin;
-            height: 3vmin;
+            width: 2vmin;
+            height: 2vmin;
             top: 50%;
             left: 50%;
             transform: translate(-50%,-50%);
@@ -94,6 +105,59 @@
             background: linear-gradient(to right,hsl(0,100%,50%),hsl(60,100%,50%),hsl(120,100%,50%),hsl(180,100%,50%),hsl(240,100%,50%),hsl(300,100%,50%),hsl(360,100%,50%));
             height: 100%;
         }
+
+        #color-rect {
+            background-color: #ff0000;
+            width: 12vmin;
+            height: 12vmin;
+            margin: 2vmin auto; /* use margins to center; mutually exclusive with display:inline-block */
+        }
+        #text-hex {
+            margin-bottom: 2vmin;
+            text-align: center;
+            font-size: var(--font-large);
+        }
+
+        .color-row {
+            align-items: center;
+            padding: 0.25vmin 1vmin 1vmin 1vmin; /* top right bottom left */
+        }
+        .color-label {
+            display: block;
+            padding: 0 1vmin;
+            font-size: var(--font-medium);
+        }
+        .color-input {
+            color: var(--text-light);
+            background-color: transparent;
+            display: block;
+            max-width: 100%; /* override intrinsic width of <input> to prevent growing larger than parent */
+            font-size: var(--font-medium);
+        }
+        .color-middle {
+            background-color: #222;
+            border: 1px solid #555;
+            /* border-radius: 1.5vmin; */
+            display: block;
+            padding: 0.2vmin 1vmin;
+            min-width: 0; /* allow container to be smaller than intrinsic width of child <input> */
+            flex-grow: 1;
+        }
+        .color-copy {
+            cursor: pointer;
+            background: url("source/icon-copy.png");
+            background-size: contain;
+            /* background-color: #444; */
+            display: block;
+            width: 2vmin;
+            height: 2vmin;
+            flex-shrink: 0; /* prevent shrinking */
+        }
+        .color-middle + .color-copy {
+            margin-left: 1vmin;
+        }
+
+        
     </style>
 </head>
 <body>
@@ -110,7 +174,7 @@
         <div class='flex-row' style='width:100%;flex-grow:1;'>
             <div class='flex-col'>
                 <div id='select-saturation-lightness'>
-                    <canvas id='color-rect'></canvas>
+                    <canvas id='saturation-lightness-rect'></canvas>
                     <div id='color-handle'></div>
                 </div>
                 <div id='select-hue'>
@@ -118,27 +182,59 @@
                     <div id='hue-slider-handle'></div>
                 </div>
             </div>
-            <div id='display-color'></div>
+            <div id='display-color'>
+                <div id='color-rect'></div>
+                <div id='text-hex'>#ff0000</div>
+                <div class='color-label'>RGB</div>
+                <div class='flex-row color-row'>
+                    <div class='color-middle'><input id='text-rgb' class='color-input' type='text' value='255, 0, 0'></div>
+                    <div class='color-copy' title='Copy RGB string' onclick='copyText("rgb(255,0,0)")'></div>
+                </div>
+                <div class='color-label'>HSV</div>
+                <div class='flex-row color-row'>
+                    <div class='color-middle'><input id='text-hsv' class='color-input' type='text' value='0, 100%, 100%'></div>
+                    <div class='color-copy' title='Copy HSV string' onclick='copyText("hsv(0,100%,100%)")'></div>
+                </div>
+                <div class='color-label'>HSL</div>
+                <div class='flex-row color-row'>
+                    <div class='color-middle'><input id='text-hsl' class='color-input' type='text' value='0, 100%, 50%'></div>
+                    <div class='color-copy' title='Copy HSL string' onclick='copyText("hsl(0,100%,50%)")'></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script type='text/javascript'>
+        // ui curves
         const curveTop = document.getElementById('curve-top');
         const curveMid = document.getElementById('curve-mid');
         const curveBot = document.getElementById('curve-bot');
+        // color selection
         const container = document.getElementById('select-saturation-lightness');
         const slider = document.getElementById('hue-slider-bg');
         const handleHue = document.getElementById('hue-slider-handle');
         const handleSaturationLightness = document.getElementById('color-handle');
-        const cv = document.getElementById('color-rect');
+        // color display
+        const colorRect = document.getElementById('color-rect');
+        const textRGB = document.getElementById('text-rgb');
+        const textHSV = document.getElementById('text-hsv');
+        const textHSL = document.getElementById('text-hsl');
+
+        // color selection canvas
+        const cv = document.getElementById('saturation-lightness-rect');
         const ctx = cv.getContext('2d');
 
         ////
 
+        const dummyText = 'hello peeps';
+        function copyText (text) {
+            navigator.clipboard.writeText(text);
+        }
+
         let color = {
             h : 0, // on [0,360] deg
-            s : 1.0, // on [0,1]
-            v : 0.5, // on [0,1]
+            s : 0.9, // on [0,1]
+            v : 0.9, // on [0,1]
             setH : (p = 0) => {
                 p = Math.min(Math.max(0,p),1); // clamp
                 color.h = 360 * p;
@@ -146,7 +242,7 @@
             setSV : (ps = 0, pv = 0) => {
                 color.s = Math.min(Math.max(0,ps),1);
                 color.v = Math.min(Math.max(0,pv),1);
-                console.log(`s ${ps.toFixed(3)}, v ${pv.toFixed(3)}`);
+                // console.log(`s ${ps.toFixed(3)}, v ${pv.toFixed(3)}`);
             },
             getHSV : () => {
                 return hsvStr(color.h,color.s,color.v);
@@ -161,12 +257,12 @@
 
         function hslStr (h,s,l,round=false) {
             return (round) // [0, 1.0, 0.5] -> [0, 100%, 50%]
-                ? `hsl(${h},${(100*s).toFixed(0)}%,${(100*l).toFixed(0)}%)`
+                ? `${h.toFixed(0)}, ${(100*s).toFixed(0)}%, ${(100*l).toFixed(0)}%`
                 : `hsl(${h},${100*s}%,${100*l}%)`;
         }
         function hsvStr (h,s,v,round=false) {
             return (round) // [0, 1.0, 0.5] -> [0, 100%, 50%]
-                ? `hsv(${h},${(100*s).toFixed(0)}%,${(100*v).toFixed(0)}%)`
+                ? `${h.toFixed(0)}, ${(100*s).toFixed(0)}%, ${(100*v).toFixed(0)}%`
                 : `hsv(${h},${100*s}%,${100*v}%)`;
         }
 
@@ -183,6 +279,10 @@
                 }
             }
             return [h,s,l];
+        }
+        function hsv2rgb (h,s,v) {
+            // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
+            // https://cs.stackexchange.com/questions/64549/convert-hsv-to-rgb-colors
         }
 
         ////
@@ -218,14 +318,26 @@
             curveBot.setAttribute('fill', dark); // dark hue
             document.body.style.backgroundColor = white; // white
         }
+        function refreshHue () {
+            drawColorRect(color.h);
+            handleSaturationLightness.style.backgroundColor = color.getHSL();
+            colorRect.style.backgroundColor = color.getHSL();
+        }
+        function refreshSaturationValue () {
+            handleSaturationLightness.style.left = (100 * color.s) + '%';
+            handleSaturationLightness.style.top = (100 * (1-color.v)) + '%';
+            handleSaturationLightness.style.backgroundColor = color.getHSL();
+            colorRect.style.backgroundColor = color.getHSL();
+        }
         function selectHue (mouseEvent) {
             const b = slider.getBoundingClientRect();
             const x = mouseEvent.clientX - b.left;
             // update color
             color.setH(x / b.width);
+            textHSV.value = hsvStr(color.h,color.s,color.v, true);
+            textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v), true);
             // refresh UI
-            drawColorRect(color.h);
-            handleSaturationLightness.style.backgroundColor = color.getHSL();
+            refreshHue();
             refreshUIColors();
         }
         function selectSaturationValue (mouseEvent) {
@@ -234,14 +346,18 @@
             const y = mouseEvent.clientY - b.top;
             // update color
             color.setSV(x/b.width, (b.height-y)/b.height);
+            textHSV.value = hsvStr(color.h,color.s,color.v, true);
+            textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v), true);
             // refresh UI
-            handleSaturationLightness.style.left = (100 * x/b.width) + '%';
-            handleSaturationLightness.style.top = (100 * y/b.height) + '%';
-            handleSaturationLightness.style.backgroundColor = color.getHSL();
+            refreshSaturationValue();
         }
 
         // init
+        refreshHue();
+        refreshSaturationValue();
         refreshUIColors();
+        textHSV.value = hsvStr(color.h,color.s,color.v, true);
+        textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v), true);
 
         // resize
         resizeColorRect();
