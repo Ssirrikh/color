@@ -24,7 +24,7 @@
 			display: block;
 		}
 		input {
-			/* strip default formatting */
+			/* remove default formatting */
 			border: none;
 			outline: none;
 		}
@@ -35,7 +35,9 @@
 			display: flex;
 			flex-direction: row;
 			flex-grow: 1;
+			height: 0; /* need dummy height or content in row w/ height:100% loses the ability to dynamically resize sometimes */
 			width: 100%;
+			min-width: 0;
 		}
 		.flex-col {
 			display: flex;
@@ -43,6 +45,7 @@
 			flex-grow: 1;
 			width: 0; /* need dummy width for flex-grow to work */
 			height: 100%;
+			min-height: 0;
 		}
 
 		#main {
@@ -110,11 +113,24 @@
 			height: 100%;
 		}
 
+		#color-rand {
+			cursor: pointer;
+			background: url("source/icon-random.png");
+			background-size: contain;
+			float: right;
+			position: relative;
+			width: var(--font-large);
+			height: var(--font-large);
+			top: 0.25vmin;
+			right: 0.25vmin;
+		}
 		#color-rect {
 			background-color: #ff0000;
+			border: 1px solid #555;
 			width: 12vmin;
 			height: 12vmin;
 			margin: 2vmin auto; /* use margins to center; mutually exclusive with display:inline-block */
+			margin-bottom: 1vmin;
 		}
 		#text-hex {
 			margin-bottom: 2vmin;
@@ -124,6 +140,7 @@
 
 		.color-row {
 			align-items: center;
+			height: 4vmin;
 			padding: 0.25vmin 1vmin 1vmin 1vmin; /* top right bottom left */
 		}
 		.color-label {
@@ -161,6 +178,7 @@
 			margin-left: 1vmin;
 		}
 
+
 		
 	</style>
 </head>
@@ -174,7 +192,10 @@
 	</svg>
 
 	<div id='main' class='flex-col'>
-		<div id='header-bar'>Color Picker</div>
+		<div id='header-bar'>
+			Color Picker
+			<div id='color-rand' title='Random color' onclick='randColor()'></div>
+		</div>
 		<div class='flex-row' style='width:100%;flex-grow:1;'>
 			<div class='flex-col'>
 				<div id='select-saturation-lightness'>
@@ -187,22 +208,24 @@
 				</div>
 			</div>
 			<div id='display-color'>
-				<div id='color-rect'></div>
+				<div id='color-rect'>
+					
+				</div>
 				<div id='text-hex'>#ff0000</div>
 				<div class='color-label'>RGB</div>
 				<div class='flex-row color-row'>
-					<div class='color-middle'><input id='text-rgb' class='color-input' type='text' value='255, 0, 0'></div>
-					<div class='color-copy' title='Copy RGB string' onclick='copyText("rgb(255,0,0)")'></div>
+					<div class='color-middle'><input id='text-rgb' class='color-input' type='text' spellcheck='false' value='255, 0, 0'></div>
+					<div class='color-copy' title='Copy CSS-formatted RGB string' onclick='copyText( rgbStr(...hsv2rgb(color.h,color.s,color.v)) )'></div>
 				</div>
 				<div class='color-label'>HSV</div>
 				<div class='flex-row color-row'>
-					<div class='color-middle'><input id='text-hsv' class='color-input' type='text' value='0, 100%, 100%'></div>
-					<div class='color-copy' title='Copy HSV string' onclick='copyText("hsv(0,100%,100%)")'></div>
+					<div class='color-middle'><input id='text-hsv' class='color-input' type='text' spellcheck='false' value='0, 100%, 100%'></div>
+					<div class='color-copy' title='Copy CSS-formatted HSV string' onclick='copyText( hsvStr(color.h,color.s,color.v) )'></div>
 				</div>
 				<div class='color-label'>HSL</div>
 				<div class='flex-row color-row'>
-					<div class='color-middle'><input id='text-hsl' class='color-input' type='text' value='0, 100%, 50%'></div>
-					<div class='color-copy' title='Copy HSL string' onclick='copyText("hsl(0,100%,50%)")'></div>
+					<div class='color-middle'><input id='text-hsl' class='color-input' type='text' spellcheck='false' value='0, 100%, 50%'></div>
+					<div class='color-copy' title='Copy CSS-formatted HSL string' onclick='copyText( hslStr(...hsv2hsl(color.h,color.s,color.v)) )'></div>
 				</div>
 			</div>
 		</div>
@@ -252,6 +275,11 @@
 				color.v = Math.min(Math.max(0,pv),1);
 				// console.log(`s ${ps.toFixed(3)}, v ${pv.toFixed(3)}`);
 			},
+			setRand : () => {
+				color.h = 360 * Math.random();
+				color.s = Math.random();
+				color.v = Math.random();
+			},
 
 			// output
 			getHSV : () => {
@@ -267,6 +295,8 @@
 				return [`hsl(${color.h-delta},50%,90%)`,`hsl(${color.h},100%,50%)`,`hsl(${color.h+delta},80%,18%)`,`hsl(${color.h},50%,5%)`]; // [white,hue,dark,black]
 			}
 		};
+
+		//// COLOR ////
 
 		function hslStr (h,s,l,asDisplayStr=false) {
 			return (asDisplayStr) // [0, 1.0, 0.5] -> [0, 100%, 50%]
@@ -347,6 +377,13 @@
 
 		////
 
+		function randColor () {
+			color.setRand();
+			refreshAll();
+		}
+
+		////
+
 		function resizeColorRect () {
 			cv.width = container.clientWidth;
 			cv.height = container.clientHeight;
@@ -389,15 +426,24 @@
 			handleSaturationLightness.style.backgroundColor = color.getHSL();
 			colorRect.style.backgroundColor = color.getHSL();
 		}
+		function refreshText () {
+			textHSV.value = hsvStr(color.h,color.s,color.v, true);
+			textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v), true);
+			textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v), true);
+			textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+		}
+		function refreshAll () {
+			refreshHue();
+			refreshSaturationValue();
+			refreshUIColors();
+			refreshText();
+		}
 		function selectHue (mouseEvent) {
 			const b = slider.getBoundingClientRect();
 			const x = mouseEvent.clientX - b.left;
 			// update color
 			color.setH(x / b.width);
-			textHSV.value = hsvStr(color.h,color.s,color.v, true);
-			textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v), true);
-			textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v), true);
-			textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+			refreshText();
 			// refresh UI
 			refreshHue();
 			refreshUIColors();
@@ -408,22 +454,13 @@
 			const y = mouseEvent.clientY - b.top;
 			// update color
 			color.setSV(x/b.width, (b.height-y)/b.height);
-			textHSV.value = hsvStr(color.h,color.s,color.v, true);
-			textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v), true);
-			textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v), true);
-			textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+			refreshText();
 			// refresh UI
 			refreshSaturationValue();
 		}
 
 		// init
-		refreshHue();
-		refreshSaturationValue();
-		refreshUIColors();
-		textHSV.value = hsvStr(color.h,color.s,color.v, true);
-		textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v), true);
-		textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v), true);
-		textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+		refreshAll();
 
 		// resize
 		resizeColorRect();
