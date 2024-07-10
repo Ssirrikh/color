@@ -51,7 +51,8 @@
 		#main {
 			background-color: #444;
 			border-radius: 8px;
-			filter: drop-shadow(0 0 4px #00000088);
+			filter: drop-shadow(0 0 4px #00000044);
+			/* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); */
 			overflow: hidden;
 			position: absolute;
 			width: 80vmin;
@@ -208,24 +209,22 @@
 				</div>
 			</div>
 			<div id='display-color'>
-				<div id='color-rect'>
-					
-				</div>
+				<div id='color-rect'></div>
 				<div id='text-hex'>#ff0000</div>
 				<div class='color-label'>RGB</div>
 				<div class='flex-row color-row'>
 					<div class='color-middle'><input id='text-rgb' class='color-input' type='text' spellcheck='false' value='255, 0, 0'></div>
-					<div class='color-copy' title='Copy CSS-formatted RGB string' onclick='copyText( rgbStr(...hsv2rgb(color.h,color.s,color.v)) )'></div>
+					<div class='color-copy' title='Copy CSS-formatted RGB string' onclick='copyText( rgbCssStr(...hsv2rgb(color.h,color.s,color.v)) )'></div>
 				</div>
 				<div class='color-label'>HSV</div>
 				<div class='flex-row color-row'>
 					<div class='color-middle'><input id='text-hsv' class='color-input' type='text' spellcheck='false' value='0, 100%, 100%'></div>
-					<div class='color-copy' title='Copy CSS-formatted HSV string' onclick='copyText( hsvStr(color.h,color.s,color.v) )'></div>
+					<div class='color-copy' title='Copy CSS-formatted HSV string' onclick='copyText( hsvCssStr(color.h,color.s,color.v) )'></div>
 				</div>
 				<div class='color-label'>HSL</div>
 				<div class='flex-row color-row'>
 					<div class='color-middle'><input id='text-hsl' class='color-input' type='text' spellcheck='false' value='0, 100%, 50%'></div>
-					<div class='color-copy' title='Copy CSS-formatted HSL string' onclick='copyText( hslStr(...hsv2hsl(color.h,color.s,color.v)) )'></div>
+					<div class='color-copy' title='Copy CSS-formatted HSL string' onclick='copyText( hslCssStr(...hsv2hsl(color.h,color.s,color.v)) )'></div>
 				</div>
 			</div>
 		</div>
@@ -257,6 +256,7 @@
 		const dummyText = 'hello peeps';
 		function copyText (text) {
 			navigator.clipboard.writeText(text);
+			console.log(`"${text}" copied to clipboard!`);
 		}
 
 		let color = {
@@ -273,7 +273,6 @@
 			setSV : (ps = 0, pv = 0) => {
 				color.s = Math.min(Math.max(0,ps),1);
 				color.v = Math.min(Math.max(0,pv),1);
-				// console.log(`s ${ps.toFixed(3)}, v ${pv.toFixed(3)}`);
 			},
 			setRand : () => {
 				color.h = 360 * Math.random();
@@ -298,24 +297,25 @@
 
 		//// COLOR ////
 
-		function hslStr (h,s,l,asDisplayStr=false) {
-			return (asDisplayStr) // [0, 1.0, 0.5] -> [0, 100%, 50%]
-				? `${h.toFixed(0)}, ${(100*s).toFixed(0)}%, ${(100*l).toFixed(0)}%`
-				: `hsl(${h},${100*s}%,${100*l}%)`;
-		}
-		function hsvStr (h,s,v,asDisplayStr=false) {
-			return (asDisplayStr) // [0, 1.0, 0.5] -> [0, 100%, 50%]
-				? `${h.toFixed(0)}, ${(100*s).toFixed(0)}%, ${(100*v).toFixed(0)}%`
-				: `hsv(${h},${100*s}%,${100*v}%)`;
-		}
-		function rgbStr (r,g,b,asDisplayStr=false) {
-			return (asDisplayStr)
-				? `${r}, ${g}, ${b}`
-				: `rgb(${r},${g},${b})`;
-		}
-		function hexStr (hex) {
-			return hex; // for completeness or smt
-		}
+		const hslStr    = (h,s,l,round=true) => (round) ? `${h.toFixed(0)}, ${(100*s).toFixed(0)}%, ${(100*l).toFixed(0)}%` : `${h}, ${100*s}%, ${100*l}%`;
+		const hslCssStr = (h,s,l,round=true) => (round) ? `hsl(${h.toFixed(0)},${(100*s).toFixed(0)}%,${(100*l).toFixed(0)}%)` : `hsl(${h},${100*s}%,${100*l}%)`;
+		const hsvStr    = (h,s,v,round=true) => (round) ? `${h.toFixed(0)}, ${(100*s).toFixed(0)}%, ${(100*v).toFixed(0)}%` : `${h}, ${100*s}%, ${100*v}%`;
+		const hsvCssStr = (h,s,v,round=true) => (round) ? `hsv(${h.toFixed(0)},${(100*s).toFixed(0)}%,${(100*v).toFixed(0)}%)` : `hsv(${h},${100*s}%,${100*v}%)`;
+		const rgbStr    = (r,g,b) => `${r.toFixed(0)}, ${g.toFixed(0)}, ${b.toFixed(0)}`;
+		const rgbCssStr = (r,g,b) => `rgb(${r.toFixed(0)},${g.toFixed(0)},${b.toFixed(0)})`;
+		const hexStr = hexCssStr = (hex) => {
+			if (hex[0] == '#') hex = hex.slice(1);
+			// #rgb and #rgba shorthand
+			if (hex.length == 3) return '#' + hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2];
+			if (hex.length == 4) return '#' + hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2] + hex[3]+hex[3];
+			// #rrggbb and #rrggbbaa
+			if (hex.length == 6) return '#' + hex;
+			if (hex.length == 8) return '#' + hex;
+		};
+
+		// function isValidHSL (hsl) {
+		// 	if (hsl.substr(0,4) == 'hsl(' && hsl[hsl.length] == ')') hsl = 
+		// }
 
 		function hsv2hsl (h,s,v) {
 			// https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_HSL
@@ -375,6 +375,15 @@
 			return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
 		}
 
+		function isValidColor(colorStr) {
+			// hsv is not natively supported in CSS3, so we must validate it manually
+			if (/^hsv\(\d+\.?\d*(?:rad|deg)?,\d+\.?\d*%,\d+\.?\d*%\)$/.test(colorStr.replaceAll(/\s/g,''))) return true;
+			// CSS3 can natively validate hsl(h,s,l) + hsla(h,s,l,a) + rgb(r,g,b) + rgba(r,g,b,a) + #rrggbb + #rrggbbaa + #rgb + #rgba + all 140 named colors
+			let s = new Option().style;
+			s.color = colorStr; // will set to "" if color str invalid
+			return s.color != '';
+		}
+
 		////
 
 		function randColor () {
@@ -427,9 +436,9 @@
 			colorRect.style.backgroundColor = color.getHSL();
 		}
 		function refreshText () {
-			textHSV.value = hsvStr(color.h,color.s,color.v, true);
-			textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v), true);
-			textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v), true);
+			textHSV.value = hsvStr(color.h,color.s,color.v);
+			textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
+			textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
 			textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
 		}
 		function refreshAll () {
