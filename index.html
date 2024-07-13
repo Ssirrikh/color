@@ -260,7 +260,7 @@
 		}
 
 		let color = {
-			// underlyingly use HSV
+			// underlyingly HSV, so color picker has least input lag possible
 			h : 0, // on [0,360] deg
 			s : 0.9, // on [0,1]
 			v : 0.9, // on [0,1]
@@ -312,10 +312,8 @@
 			if (hex.length == 6) return '#' + hex;
 			if (hex.length == 8) return '#' + hex;
 		};
-
-		// function isValidHSL (hsl) {
-		// 	if (hsl.substr(0,4) == 'hsl(' && hsl[hsl.length] == ')') hsl = 
-		// }
+		
+		//// from hsv ////
 
 		function hsv2hsl (h,s,v) {
 			// https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_HSL
@@ -375,6 +373,47 @@
 			return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
 		}
 
+		//// to hsv ////
+
+		function hsl2hsv (h,s,l) {
+			const v = l + s * Math.min(l,1-l);
+
+			if (v == 0) s = 0;
+			else        s = 2 * (1 - l/v);
+
+			return [h,s,v];
+		}
+		function rgb2hsv (r,g,b) {
+			r /= 255;
+			g /= 255;
+			b /= 255;
+
+			const min = Math.min(r,g,b); // largest component
+			const max = Math.max(r,g,b); // smallest component
+			const c = max - min; // chroma
+
+			let h,s,v;
+
+			v = max;
+
+			if (c == 0)        h = 0;
+			else if (r == max) h = 60*( (g-b)/c + 6 ) % 360; // +0 deg for baseline red, then +360 % 360 to wrap around correctly
+			else if (g == max) h = 60*( (b-r)/c + 2 ); // +120 deg for baseline green
+			else if (b == max) h = 60*( (r-g)/c + 4 ); // +240 deg for baseline blue
+
+			if (v == 0) s = 0;
+			else        s = c / v; // (max-min) / max
+
+			return [h,s,v]; // h on [0,360], s on [0,1], v on [0,1]
+		}
+		function hex2hsv (hex) {
+			// https://stackoverflow.com/a/5624139
+			const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+			return (rgb)
+				? rgb2hsv(parseInt(rgb[1],16), parseInt(rgb[2],16), parseInt(rgb[3],16))
+				: undefined;
+		}
+
 		function isValidColor(colorStr) {
 			// hsv is not natively supported in CSS3, so we must validate it manually
 			if (/^hsv\(\d+\.?\d*(?:rad|deg)?,\d+\.?\d*%,\d+\.?\d*%\)$/.test(colorStr.replaceAll(/\s/g,''))) return true;
@@ -383,6 +422,28 @@
 			s.color = colorStr; // will set to "" if color str invalid
 			return s.color != '';
 		}
+		function asHSV (colorStr) {
+			let match;
+			colorStr = colorStr.replaceAll(/\s/g,'').toLowerCase();
+
+			match = /^hsv\((\d+\.?\d*)(?:rad|deg)?,(\d+\.?\d*)%,(\d+\.?\d*)%\)$/.exec(colorStr);
+			if (match) return [match[1]/1, match[2]/100, match[3]/100]; // h/1 to implicitly type cast as number
+			match = /^hsl\((\d+\.?\d*)(?:rad|deg)?,(\d+\.?\d*)%,(\d+\.?\d*)%\)$/.exec(colorStr);
+			if (match) return hsl2hsv(match[1]/1, match[2]/100, match[3]/100); // h/1 to implicitly type cast as number
+			match = /^rgb\((\d+\.?\d*),(\d+\.?\d*),(\d+\.?\d*)\)$/.exec(colorStr); // CSS3 natively accepts decimal rgb as valid, so we will too
+			if (match) return rgb2hsv(match[1], match[2], match[3]); // rgb2hsv() implicitly casts components as numbers
+			match = /^#?[a-f\d]{6}$/.exec(colorStr);
+			if (match) return hex2hsv(match[0]); // hex2hsv() implicitly casts components as numbers
+
+			// do we want to support hex shorthand? google and ddg both do at least
+			match = /^#?([a-f\d])([a-f\d])([a-f\d])$/.exec(colorStr);
+			if (match) return hex2hsv('#' + match[1]+match[1] + match[2]+match[2] + match[3]+match[3]); // hex2hsv() implicitly casts components as numbers
+		}
+		// console.log(asHSV('hsv(338,44%,86%)'));
+		// console.log(asHSV('hsl(338,57%,67%)'));
+		// console.log(asHSV('rgb(219,123,158)'));
+		// console.log(asHSV('#db7b9e'));
+		// console.log(asHSV('#456'));
 
 		////
 
