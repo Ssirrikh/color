@@ -282,13 +282,13 @@
 
 			// output
 			getHSV : () => {
-				return hsvStr(color.h,color.s,color.v);
+				return hsvCssStr(color.h,color.s,color.v);
 			},
 			getHSL : () => {
-				return hslStr(...hsv2hsl(color.h,color.s,color.v));
+				return hslCssStr(...hsv2hsl(color.h,color.s,color.v));
 			},
 			getRGB : () => {
-				return hslStr(...hsv2rgb(color.h,color.s,color.v));
+				return hslCssStr(...hsv2rgb(color.h,color.s,color.v));
 			},
 			getHueSet : (delta = 0) => {
 				return [`hsl(${color.h-delta},50%,90%)`,`hsl(${color.h},100%,50%)`,`hsl(${color.h+delta},80%,18%)`,`hsl(${color.h},50%,5%)`]; // [white,hue,dark,black]
