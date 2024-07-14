@@ -439,11 +439,11 @@
 			match = /^#?([a-f\d])([a-f\d])([a-f\d])$/.exec(colorStr);
 			if (match) return hex2hsv('#' + match[1]+match[1] + match[2]+match[2] + match[3]+match[3]); // hex2hsv() implicitly casts components as numbers
 		}
-		// console.log(asHSV('hsv(338,44%,86%)'));
-		// console.log(asHSV('hsl(338,57%,67%)'));
-		// console.log(asHSV('rgb(219,123,158)'));
-		// console.log(asHSV('#db7b9e'));
-		// console.log(asHSV('#456'));
+		console.log(asHSV('hsv(338,44%,86%)'));
+		console.log(asHSV('hsl(338,57%,67%)'));
+		console.log(asHSV('rgb(219,123,158)'));
+		console.log(asHSV('#db7b9e'));
+		console.log(asHSV('#456'));
 
 		////
 
