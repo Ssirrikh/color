@@ -274,6 +274,11 @@
 				color.s = Math.min(Math.max(0,ps),1);
 				color.v = Math.min(Math.max(0,pv),1);
 			},
+			setFromHSV : (h = 0, s = 0, v = 0) => {
+				color.h = Math.min(Math.max(0,h),360);
+				color.s = Math.min(Math.max(0,s),1);
+				color.v = Math.min(Math.max(0,v),1);
+			},
 			setRand : () => {
 				color.h = 360 * Math.random();
 				color.s = Math.random();
@@ -415,8 +420,12 @@
 		}
 
 		function isValidColor(colorStr) {
-			// hsv is not natively supported in CSS3, so we must validate it manually
-			if (/^hsv\(\d+\.?\d*(?:rad|deg)?,\d+\.?\d*%,\d+\.?\d*%\)$/.test(colorStr.replaceAll(/\s/g,''))) return true;
+			colorStr = colorStr.replaceAll(/\s/g,'').toLowerCase();
+			// add support for hex colors without leading "#", since the color picker can handle them, even if CSS3 can't
+			if (/^#?[a-f\d]{6}$/.test(colorStr)) return true;
+			if (/^#?([a-f\d])([a-f\d])([a-f\d])$/.test(colorStr)) return true;
+			// hsv is not natively supported in CSS3, so validate it manually
+			if (/^hsv\(\d+\.?\d*(?:rad|deg)?,\d+\.?\d*%,\d+\.?\d*%\)$/.test(colorStr)) return true;
 			// CSS3 can natively validate hsl(h,s,l) + hsla(h,s,l,a) + rgb(r,g,b) + rgba(r,g,b,a) + #rrggbb + #rrggbbaa + #rgb + #rgba + all 140 named colors
 			let s = new Option().style;
 			s.color = colorStr; // will set to "" if color str invalid
@@ -439,11 +448,11 @@
 			match = /^#?([a-f\d])([a-f\d])([a-f\d])$/.exec(colorStr);
 			if (match) return hex2hsv('#' + match[1]+match[1] + match[2]+match[2] + match[3]+match[3]); // hex2hsv() implicitly casts components as numbers
 		}
-		console.log(asHSV('hsv(338,44%,86%)'));
-		console.log(asHSV('hsl(338,57%,67%)'));
-		console.log(asHSV('rgb(219,123,158)'));
-		console.log(asHSV('#db7b9e'));
-		console.log(asHSV('#456'));
+		// console.log(asHSV('hsv(338,44%,86%)'));
+		// console.log(asHSV('hsl(338,57%,67%)'));
+		// console.log(asHSV('rgb(219,123,158)'));
+		// console.log(asHSV('#db7b9e'));
+		// console.log(asHSV('#456'));
 
 		////
 
@@ -530,6 +539,23 @@
 		}
 
 		// init
+		color.setRand();
+		// ?color=9df6f5&palette=rgb(12,200,66)+hsv(20,99,30)+345+hsl(0,0)
+		const searchParams = new URLSearchParams(window.location.search);
+		for (let [key,value] of searchParams) {
+			// saved color
+			if (key == 'color' && value != '') {
+				const [h,s,v] = asHSV(value);
+				if (h && s && v) color.setFromHSV(h,s,v);
+			}
+			// saved palette
+			else if (key == 'palette' && value != '') {
+				const palette = value.split(' ')
+					.map(c => (c.slice(0,3) == 'hsv' || c.slice(0,3) == 'hsl') ? c.replace(/^(.*)(,\d+\.?\d*)(\))/,'$1%$2%$3') : c) // add "%" back in to hsv/hsl colors
+					.filter(c => isValidColor(c));
+				console.log(palette);
+			}
+		}
 		refreshAll();
 
 		// resize
