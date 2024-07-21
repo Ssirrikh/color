@@ -311,10 +311,55 @@
 				return hslCssStr(...hsv2rgb(color.h,color.s,color.v));
 			},
 			getHEX : () => {
-				return hexCssStr(...hsv2hex(color.h,color.s,color.v));
+				return hsv2hex(color.h,color.s,color.v);
 			},
 			getHueSet : (delta = 0) => {
 				return [`hsl(${color.h-delta},50%,90%)`,`hsl(${color.h},100%,50%)`,`hsl(${color.h+delta},80%,18%)`,`hsl(${color.h},50%,5%)`]; // [white,hue,dark,black]
+			}
+		};
+
+		let palette = {
+			// use HSV internally for nicer maths, but prefer hex for display/output
+			colors : [],
+
+			// input
+			add : (color,i) => {
+				if (i >= 0 && i < palette.colors.length) {
+					palette.colors.splice(i,0,color);
+					return i;
+				} else {
+					palette.colors.push(color);
+					return palette.colors.length-1;
+				}
+			},
+			move : (from,to) => {
+				if (from < 0 || from >= palette.colors.length) return -1; // handle OOB source (from)
+				palette.colors.splice(to,0, palette.colors.splice(from,1)[0] ); // natively handles OOB destination (to) by clamping
+				return Math.min(Math.max(0,to),palette.colors.length); // reconstruct clamp
+			},
+			remove : (i) => {
+				return palette.colors.splice(i,1)[0];
+			},
+
+			// output
+			asHEX : () => {
+				let results = [];
+				for (let color of palette.colors) {
+					results.push( hsv2hex(...asHSV(color)) )
+				}
+				return results;
+			},
+			getQueryString : () => {
+				return (palette.colors.length == 0)
+					? ''
+					: 'palette=' + palette.asHEX().join('+').replaceAll('#',''); // strip '#' for url compatibility
+			},
+
+			// iteration
+			forEach : (callback = (color,i)=>{}) => {
+				for (let i = 0; i < palette.colors.length; i++) {
+					callback(palette.colors[i],i);
+				}
 			}
 		};
 
@@ -325,11 +370,19 @@
 		function copyText (text) {
 			navigator.clipboard.writeText(text);
 			console.log(`"${text}" copied to clipboard!`);
+			// write to onscreen log once implemented
 		}
 
 		function randColor () {
 			color.setRand();
 			refreshAll();
+		}
+
+		function getSessionURL () {
+			const base = window.location.href.split('?')[0]; // extract path (without search params)
+			const colorStr = 'color=' + color.getHEX().replaceAll('#',''); // strip '#' for url compatibility
+			const paletteStr = palette.getQueryString();
+			return `${base}?${colorStr}&${paletteStr}`;
 		}
 
 
@@ -509,10 +562,14 @@
 			}
 			// saved palette
 			else if (key == 'palette' && value != '') {
-				const palette = value.split(' ')
+				const paramPalette = value.split(' ')
 					.map(c => (c.slice(0,3) == 'hsv' || c.slice(0,3) == 'hsl') ? c.replace(/^(.*)(,\d+\.?\d*)(\))/,'$1%$2%$3') : c) // add "%" back in to hsv/hsl colors
 					.filter(c => isValidColor(c));
-				console.log(palette);
+				console.log('read palette: ' + paramPalette);
+				for (let color of paramPalette) {
+					palette.add(color);
+				}
+				console.log('saved palette: ' + palette.colors);
 			}
 		}
 
