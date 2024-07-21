@@ -310,6 +310,9 @@
 			getRGB : () => {
 				return hslCssStr(...hsv2rgb(color.h,color.s,color.v));
 			},
+			getHEX : () => {
+				return hexCssStr(...hsv2hex(color.h,color.s,color.v));
+			},
 			getHueSet : (delta = 0) => {
 				return [`hsl(${color.h-delta},50%,90%)`,`hsl(${color.h},100%,50%)`,`hsl(${color.h+delta},80%,18%)`,`hsl(${color.h},50%,5%)`]; // [white,hue,dark,black]
 			}
@@ -518,7 +521,7 @@
 		refreshAll();
 
 
-		
+
 	</script>
 
 </body>
