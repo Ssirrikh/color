@@ -265,16 +265,15 @@
 			s : 0.9, // on [0,1]
 			v : 0.9, // on [0,1]
 
-			// input
-			setH : (p = 0) => {
-				p = Math.min(Math.max(0,p),1); // clamp
-				color.h = 360 * p;
+			// force input (clamped)
+			setH : (h = 0) => {  color.h = Math.min(Math.max(0,h),360); },
+			setS : (s = 0) => {  color.h = Math.min(Math.max(0,s),1); },
+			setV : (v = 0) => {  color.h = Math.min(Math.max(0,v),1); },
+			setSV : (s = 0, v = 0) => {
+				color.s = Math.min(Math.max(0,s),1);
+				color.v = Math.min(Math.max(0,v),1);
 			},
-			setSV : (ps = 0, pv = 0) => {
-				color.s = Math.min(Math.max(0,ps),1);
-				color.v = Math.min(Math.max(0,pv),1);
-			},
-			setFromHSV : (h = 0, s = 0, v = 0) => {
+			setHSV : (h = 0, s = 0, v = 0) => {
 				color.h = Math.min(Math.max(0,h),360);
 				color.s = Math.min(Math.max(0,s),1);
 				color.v = Math.min(Math.max(0,v),1);
@@ -283,6 +282,20 @@
 				color.h = 360 * Math.random();
 				color.s = Math.random();
 				color.v = Math.random();
+			},
+
+			// conditional input (only set if valid)
+			tryH : (h = -1) => { if (h >= 0 && h <= 360) color.h = h; }, // [0,360]
+			tryS : (s = -1) => { if (s >= 0 && s <= 1)   color.s = s; }, // [0,1]
+			tryV : (v = -1) => { if (v >= 0 && v <= 1)   color.v = v; }, // [0,1]
+			trySV : (s = -1, v = -1) => {
+				if (s >= 0 && s <= 1) color.s = s;
+				if (v >= 0 && v <= 1) color.v = v;
+			},
+			tryHSV : (h = -1, s = -1, v = -1) => {
+				if (h >= 0 && h <= 360) color.h = h;
+				if (s >= 0 && s <= 1)   color.s = s;
+				if (v >= 0 && v <= 1)   color.v = v;
 			},
 
 			// output
@@ -402,7 +415,7 @@
 			v = max;
 
 			if (c == 0)        h = 0;
-			else if (r == max) h = 60*( (g-b)/c + 6 ) % 360; // +0 deg for baseline red, then +360 % 360 to wrap around correctly
+			else if (r == max) h = 60*( (g-b)/c + 6 ) % 360; // +0 deg for baseline red, then +360 % 360 to wrap correctly
 			else if (g == max) h = 60*( (b-r)/c + 2 ); // +120 deg for baseline green
 			else if (b == max) h = 60*( (r-g)/c + 4 ); // +240 deg for baseline blue
 
@@ -421,7 +434,7 @@
 
 		function isValidColor(colorStr) {
 			colorStr = colorStr.replaceAll(/\s/g,'').toLowerCase();
-			// add support for hex colors without leading "#", since the color picker can handle them, even if CSS3 can't
+			// add support for hex colors without leading "#" since the color picker can handle them, even if CSS3 can't
 			if (/^#?[a-f\d]{6}$/.test(colorStr)) return true;
 			if (/^#?([a-f\d])([a-f\d])([a-f\d])$/.test(colorStr)) return true;
 			// hsv is not natively supported in CSS3, so validate it manually
@@ -511,17 +524,17 @@
 			textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
 			textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
 		}
-		function refreshAll () {
+		function refreshAll (needRefreshText = true) {
 			refreshHue();
 			refreshSaturationValue();
 			refreshUIColors();
-			refreshText();
+			if (needRefreshText) refreshText();
 		}
 		function selectHue (mouseEvent) {
 			const b = slider.getBoundingClientRect();
 			const x = mouseEvent.clientX - b.left;
 			// update color
-			color.setH(x / b.width);
+			color.setH(360 * x/b.width);
 			refreshText();
 			// refresh UI
 			refreshHue();
@@ -546,7 +559,7 @@
 			// saved color
 			if (key == 'color' && value != '') {
 				const [h,s,v] = asHSV(value);
-				if (h && s && v) color.setFromHSV(h,s,v);
+				if (h && s && v) color.setHSV(h,s,v);
 			}
 			// saved palette
 			else if (key == 'palette' && value != '') {
@@ -580,6 +593,44 @@
 		window.addEventListener('mouseup', (e) => {
 			draggingHue = false;
 			draggingSaturationValue = false;
+		});
+
+		// color text input
+		textHSV.addEventListener('blur', e => refreshText());
+		textHSV.addEventListener('keyup', e => {
+			if (isValidColor(`hsv(${textHSV.value})`)) {
+				color.tryHSV(...asHSV(`hsv(${textHSV.value})`));
+				// refreshing text forces cursor to end of textbox, so manually select which textboxes to refresh
+				refreshAll(false);
+				// textHSV.value = hsvStr(color.h,color.s,color.v);
+				textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
+				textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
+				textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+			}
+		});
+		textHSL.addEventListener('blur', e => refreshText());
+		textHSL.addEventListener('keyup', e => {
+			if (isValidColor(`hsl(${textHSL.value})`)) {
+				color.tryHSV(...asHSV(`hsl(${textHSL.value})`));
+				// refreshing text forces cursor to end of textbox, so manually select which textboxes to refresh
+				refreshAll(false);
+				textHSV.value = hsvStr(color.h,color.s,color.v);
+				// textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
+				textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
+				textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+			}
+		});
+		textRGB.addEventListener('blur', e => refreshText());
+		textRGB.addEventListener('keyup', e => {
+			if (isValidColor(`hsv(${textRGB.value})`)) {
+				color.tryHSV(...asHSV(`hsv(${textRGB.value})`));
+				// refreshing text forces cursor to end of textbox, so manually select which textboxes to refresh
+				refreshAll(false);
+				textHSV.value = hsvStr(color.h,color.s,color.v);
+				textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
+				// textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
+				textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+			}
 		});
 	</script>
 
