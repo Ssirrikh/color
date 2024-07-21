@@ -210,7 +210,7 @@
 			</div>
 			<div id='display-color'>
 				<div id='color-rect'></div>
-				<div id='text-hex'>#ff0000</div>
+				<input id='text-hex' class='color-input' type='text' spellcheck='false' value='#ff0000'>
 				<div class='color-label'>RGB</div>
 				<div class='flex-row color-row'>
 					<div class='color-middle'><input id='text-rgb' class='color-input' type='text' spellcheck='false' value='255, 0, 0'></div>
@@ -461,11 +461,6 @@
 			match = /^#?([a-f\d])([a-f\d])([a-f\d])$/.exec(colorStr);
 			if (match) return hex2hsv('#' + match[1]+match[1] + match[2]+match[2] + match[3]+match[3]); // hex2hsv() implicitly casts components as numbers
 		}
-		// console.log(asHSV('hsv(338,44%,86%)'));
-		// console.log(asHSV('hsl(338,57%,67%)'));
-		// console.log(asHSV('rgb(219,123,158)'));
-		// console.log(asHSV('#db7b9e'));
-		// console.log(asHSV('#456'));
 
 		////
 
@@ -522,7 +517,7 @@
 			textHSV.value = hsvStr(color.h,color.s,color.v);
 			textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
 			textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
-			textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+			textHEX.value = hsv2hex(color.h,color.s,color.v);
 		}
 		function refreshAll (needRefreshText = true) {
 			refreshHue();
@@ -605,7 +600,7 @@
 				// textHSV.value = hsvStr(color.h,color.s,color.v);
 				textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
 				textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
-				textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+				textHEX.value = hsv2hex(color.h,color.s,color.v);
 			}
 		});
 		textHSL.addEventListener('blur', e => refreshText());
@@ -617,19 +612,31 @@
 				textHSV.value = hsvStr(color.h,color.s,color.v);
 				// textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
 				textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
-				textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+				textHEX.value = hsv2hex(color.h,color.s,color.v);
 			}
 		});
 		textRGB.addEventListener('blur', e => refreshText());
 		textRGB.addEventListener('keyup', e => {
-			if (isValidColor(`hsv(${textRGB.value})`)) {
-				color.tryHSV(...asHSV(`hsv(${textRGB.value})`));
+			if (isValidColor(`rgb(${textRGB.value})`)) {
+				color.tryHSV(...asHSV(`rgb(${textRGB.value})`));
 				// refreshing text forces cursor to end of textbox, so manually select which textboxes to refresh
 				refreshAll(false);
 				textHSV.value = hsvStr(color.h,color.s,color.v);
 				textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
 				// textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
-				textHEX.innerHTML = hsv2hex(color.h,color.s,color.v);
+				textHEX.value = hsv2hex(color.h,color.s,color.v);
+			}
+		});
+		textHEX.addEventListener('blur', e => refreshText());
+		textHEX.addEventListener('keyup', e => {
+			if (isValidColor(textHEX.value)) {
+				color.tryHSV(...asHSV(textHEX.value));
+				// refreshing text forces cursor to end of textbox, so manually select which textboxes to refresh
+				refreshAll(false);
+				textHSV.value = hsvStr(color.h,color.s,color.v);
+				textHSL.value = hslStr(...hsv2hsl(color.h,color.s,color.v));
+				textRGB.value = rgbStr(...hsv2rgb(color.h,color.s,color.v));
+				// textHEX.value = hsv2hex(color.h,color.s,color.v);
 			}
 		});
 	</script>
