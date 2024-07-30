@@ -342,13 +342,10 @@
 			},
 
 			// output
-			asHEX : () => {
-				let results = [];
-				for (let color of palette.colors) {
-					results.push( hsv2hex(...asHSV(color)) )
-				}
-				return results;
-			},
+			asHSV : (i) => (i) ? asHSV(palette.colors[i]) : palette.colors.map(c => asHSV(c)),
+			asHSL : (i) => (i) ? hsv2hsl(...asHSV(palette.colors[i])) : palette.colors.map(c => hsv2hsl(...asHSV(c))),
+			asRGB : (i) => (i) ? hsv2rgb(...asHSV(palette.colors[i])) : palette.colors.map(c => hsv2rgb(...asHSV(c))),
+			asHEX : (i) => (i) ? hsv2hex(...asHSV(palette.colors[i])) : palette.colors.map(c => hsv2hex(...asHSV(c))),
 			getQueryString : () => {
 				return (palette.colors.length == 0)
 					? ''
@@ -379,7 +376,7 @@
 		}
 
 		function getSessionURL () {
-			const base = window.location.href.split('?')[0]; // extract path (without search params)
+			const base = window.location.href.split('?')[0]; // extract actual path so changes in hosting don't cause problems
 			const colorStr = 'color=' + color.getHEX().replaceAll('#',''); // strip '#' for url compatibility
 			const paletteStr = palette.getQueryString();
 			return `${base}?${colorStr}&${paletteStr}`;
@@ -547,18 +544,21 @@
 
 		//// INIT ////
 
-		// set rand color by default (overridden by search params, if present)
-		color.setRand();
-
 		// parse url search params
+		let hasColorParam = false;
+		let hasPaletteParam = false;
 		const searchParams = new URLSearchParams(window.location.search);
-		// auto-gen'd urls will use hex colors to save charcters, but any CSS color strs (+ HSV and hex shorthand) are supported 
-			// EXAMPLE: ?color=9df6f5&palette=rgb(12,200,66)+hsv(20,99,30)+345+hsl(0,0)
+		// EXAMPLE: ?color=9df6f5&palette=rgb(12,200,66)+hsv(20,99,30)+345+hsl(0,0)
+			// auto-gen'd urls will use hex colors to save charcters, but any CSS color strs (+ HSV and hex shorthand) are supported
+			// badly formatted colors are automatically filtered out
 		for (let [key,value] of searchParams) {
 			// saved color
 			if (key == 'color' && value != '') {
 				const [h,s,v] = asHSV(value);
-				if (h && s && v) color.setHSV(h,s,v);
+				if (h && s && v && !hasColorParam) {
+					color.setHSV(h,s,v);
+					hasColorParam = true;
+				}
 			}
 			// saved palette
 			else if (key == 'palette' && value != '') {
@@ -569,8 +569,20 @@
 				for (let color of paramPalette) {
 					palette.add(color);
 				}
+				if (palette.colors.length > 0) {
+					hasPaletteParam = true;
+				}
 				console.log('saved palette: ' + palette.colors);
 			}
+		}
+
+		// set initial color
+		if (hasColorParam) {
+			// color already set to first instance of color= param, if present
+		} else if (hasPaletteParam) {
+			color.setHSV(...asHSV(palette.colors[0])); // else, set to first color in palette
+		} else {
+			color.setRand(); // else, random color by default
 		}
 
 		// initial render
