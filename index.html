@@ -10,17 +10,22 @@
 
 		:root {
 			--text-light: #e8eaed;
-			--font-medium: 2vmin;
-			--font-large: 2.5vmin;
+			--text-light-subtitle: #c1c2c5;
+			--font-medium: 1em;
+			--font-large: 1.5em;
 
-			--widget-border-radius: 8px;
+			--fluid-font-size: max(2.5vh, calc(1rem + 0.3vw));
+			--widget-border-radius: calc(0.5 * var(--fluid-font-size));
 		}
 
 		* {
 			padding: 0;
 			margin: 0;
 			box-sizing: border-box;
-			font-family: Helvetica, sans-serif;
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		body {
+			font-size: var(--fluid-font-size);
 		}
 		div {
 			display: block;
@@ -31,34 +36,52 @@
 			outline: none;
 		}
 
+
+
 		/* ******************************* */
 
+		/**** FLEXBOX UTILITY ****/
+
+		.flex-sep {
+			width: 0;
+			flex-grow: 1;
+		}
 		.flex-row {
 			display: flex;
-			flex-direction: row;
-			flex-grow: 1;
-			height: 0; /* need dummy height or content in row w/ height:100% loses the ability to dynamically resize sometimes */
-			width: 100%;
-			min-width: 0;
+			flex-direction: row !important;
+			align-items: start;
 		}
 		.flex-col {
 			display: flex;
-			flex-direction: column;
-			flex-grow: 1;
-			width: 0; /* need dummy width for flex-grow to work */
-			height: 100%;
-			min-height: 0;
+			flex-direction: column !important;
+		}
+		.flex-adapt {
+			/* column on mobile, row on desktop */
+			display: flex;
+			flex-direction: column !important;
+			align-items: center;
+		}
+		.flex-adapt-reverse {
+			/* row on mobile, column on desktop */
+			display: flex;
+			flex-direction: row !important;
+			align-items: normal;
+			justify-content: center;
+		}
+		.flex-centered {
+			align-items: center;
+			justify-content: center;
 		}
 
+
+
+		/* ******************************* */
+
 		#main {
-			background-color: #444;
-			border-radius: var(--widget-border-radius);
+			background-color: transparent;
 			filter: drop-shadow(0 0 4px #00000044);
 			/* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); */
-			/* overflow: hidden; */
 			position: absolute;
-			width: 80vmin;
-			height: 50vmin;
 			top: 50%;
 			left: 50%;
 			transform: translate(-50%,-50%);
@@ -66,32 +89,40 @@
 		#header-bar {
 			color: var(--text-light);
 			background-color: #222;
-			border-bottom: 1px solid #555;
+			/* border-bottom: 1px solid #555; */
 			border-radius: var(--widget-border-radius) var(--widget-border-radius) 0 0;
-			/* filter: drop-shadow(0 0 1px #000); */
-			padding: 0.75vmin 1vmin;
-			font-size: var(--font-large);
-			z-index: 2;
+			padding: 0.5em 0.8em;
+
+			align-items: center;
+			justify-content: space-between;
+		}
+		#color-picker {
+			color: var(--text-light);
+			background-color: #444;
+			border-top: #555;
+
+			align-items: center;
 		}
 
 
 
 
 		#select-saturation-lightness {
-			/* border: 1px solid red; */
 			display: block;
 			position: relative; /* need dummy position so <color-handle> can position itself correctly */
-			width: 100%;
-			height: 94%;
+			width: 20em;
+			height: 15em;
 		}
 		#select-hue {
 			width: 100%;
-			flex-grow: 1; /* consume remaining space */
+			height: 1em;
 		}
 		#display-color {
-			color: var(--text-light);
-			width: 30%;
-			height: 100%;
+			width: 12em;
+			padding: 0.5em 0.25em;
+			font-size: 0.8em;
+
+			gap: 0.5em;
 		}
 
 		#saturation-lightness-rect {
@@ -102,12 +133,13 @@
 		}
 		#color-handle {
 			background-color: #ff0000;
-			border: 1px solid white; /* double border to both light/dark contrast */
+			/* double border gives both light/dark contrast */
+			border: 1px solid white;
 			outline: 1px solid black;
 			display: inline-block;
 			position: absolute;
-			width: 2vmin;
-			height: 2vmin;
+			width: 0.7em;
+			height: 0.7em;
 			top: 50%;
 			left: 50%;
 			transform: translate(-50%,-50%);
@@ -121,72 +153,71 @@
 			--c: black;
 			transform: translate(-50%,0);
 			position: relative;
-			width: 0; 
-			height: 0; 
+			width: 0;
+			height: 0;
 			border-left: var(--w) solid transparent;
 			border-right: var(--w) solid transparent;
 			border-bottom: var(--w) solid var(--c);
 		}
 
+		#header-bar > h1 {
+			font-size: 1em;
+			font-weight: normal;
+		}
 		#color-rand {
 			cursor: pointer;
 			background: url("source/icon-random.png");
 			background-size: contain;
-			float: right;
-			position: relative;
-			width: var(--font-large);
-			height: var(--font-large);
-			top: 0.25vmin;
-			right: 0.25vmin;
+			width: 1.25em;
+			height: 1.25em;
 		}
 		#color-rect {
 			background-color: #ff0000;
 			border: 1px solid #555;
-			width: 12vmin;
-			height: 12vmin;
-			margin: 2vmin auto; /* use margins to center; mutually exclusive with display:inline-block */
-			margin-bottom: 1vmin;
+			width: 5.5em;
+			height: 5.5em;
+			align-self: center;
 		}
 		#text-hex {
-			margin-bottom: 2vmin;
 			text-align: center;
-			font-size: var(--font-large);
 		}
 
 		.color-row {
-			align-items: center;
-			height: 4vmin;
-			padding: 0.25vmin 1vmin 1vmin 1vmin; /* top right bottom left */
-		}
-		.color-label {
-			display: block;
-			padding: 0 1vmin;
-			font-size: var(--font-medium);
-		}
-		.color-input {
-			color: var(--text-light);
-			background-color: transparent;
-			display: block;
-			max-width: 100%; /* override intrinsic width of <input> to prevent growing larger than parent */
-			font-size: var(--font-medium);
-		}
-		.color-middle {
 			background-color: #222;
 			border: 1px solid #555;
-			/* border-radius: 1.5vmin; */
+			padding: 0.2em;
+			align-items: center;
+			gap: 0.25em;
+		}
+		.color-label {
+			color: var(--text-light-subtitle);
 			display: block;
-			padding: 0.2vmin 1vmin;
+			padding: 0.2em 0.5em;
+			font-size: 0.8em;
+		}
+		.color-input {
+			/* force styling to apply to inputs */
+			color: var(--text-light);
+			background-color: transparent;
+			font-size: 1em;
+
 			min-width: 0; /* allow container to be smaller than intrinsic width of child <input> */
+			max-width: 100%; /* override intrinsic width of <input> to prevent growing larger than parent */
 			flex-grow: 1;
+		}
+		.color-row > .color-input {
+			padding: 0 0.5em;
+		}
+		.color-row + .color-label {
+			margin-top: 0.2em;
 		}
 		.color-copy {
 			cursor: pointer;
 			background: url("source/icon-copy.png");
 			background-size: contain;
-			/* background-color: #444; */
-			display: block;
-			width: 2vmin;
-			height: 2vmin;
+			width: 1em;
+			height: 1em;
+
 			flex-shrink: 0; /* prevent shrinking */
 		}
 		.color-middle + .color-copy {
@@ -207,11 +238,11 @@
 	</svg>
 
 	<div id='main' class='flex-col'>
-		<div id='header-bar'>
-			Color Picker
+		<div id='header-bar' class='flex-row'>
+			<h1>Color Picker</h1>
 			<div id='color-rand' title='Random color' onclick='randColor()'></div>
 		</div>
-		<div class='flex-row' style='width:100%;flex-grow:1;'>
+		<div id='color-picker' class='flex-row'>
 			<div class='flex-col'>
 				<div id='select-saturation-lightness'>
 					<canvas id='saturation-lightness-rect'></canvas>
@@ -222,23 +253,27 @@
 					<div id='hue-slider-handle'></div>
 				</div>
 			</div>
-			<div id='display-color'>
-				<div id='color-rect'></div>
-				<input id='text-hex' class='color-input' type='text' spellcheck='false' value='#ff0000'>
-				<div class='color-label'>RGB</div>
-				<div class='flex-row color-row'>
-					<div class='color-middle'><input id='text-rgb' class='color-input' type='text' spellcheck='false' value='255, 0, 0'></div>
-					<div class='color-copy' title='Copy CSS-formatted RGB string' onclick='copyText( rgbCssStr(...hsv2rgb(color.h,color.s,color.v)) )'></div>
+			<div id='display-color' class='flex-col'>
+				<div class='flex-col'>
+					<div id='color-rect'></div>
+					<input id='text-hex' class='color-input' type='text' spellcheck='false' value='#ff0000'>
 				</div>
-				<div class='color-label'>HSV</div>
-				<div class='flex-row color-row'>
-					<div class='color-middle'><input id='text-hsv' class='color-input' type='text' spellcheck='false' value='0, 100%, 100%'></div>
-					<div class='color-copy' title='Copy CSS-formatted HSV string' onclick='copyText( hsvCssStr(color.h,color.s,color.v) )'></div>
-				</div>
-				<div class='color-label'>HSL</div>
-				<div class='flex-row color-row'>
-					<div class='color-middle'><input id='text-hsl' class='color-input' type='text' spellcheck='false' value='0, 100%, 50%'></div>
-					<div class='color-copy' title='Copy CSS-formatted HSL string' onclick='copyText( hslCssStr(...hsv2hsl(color.h,color.s,color.v)) )'></div>
+				<div class='flex-col'>
+					<p class='color-label'>RGB</p>
+					<div class='flex-row color-row'>
+						<input id='text-rgb' class='color-input' type='text' spellcheck='false' value='255, 0, 0'>
+						<div class='color-copy' title='Copy CSS-formatted RGB string' onclick='copyText( rgbCssStr(...hsv2rgb(color.h,color.s,color.v)) )'></div>
+					</div>
+					<p class='color-label'>HSV</p>
+					<div class='flex-row color-row'>
+						<input id='text-hsv' class='color-input' type='text' spellcheck='false' value='0, 100%, 100%'>
+						<div class='color-copy' title='Copy CSS-formatted HSV string' onclick='copyText( hsvCssStr(color.h,color.s,color.v) )'></div>
+					</div>
+					<p class='color-label'>HSL</p>
+					<div class='flex-row color-row'>
+						<input id='text-hsl' class='color-input' type='text' spellcheck='false' value='0, 100%, 50%'>
+						<div class='color-copy' title='Copy CSS-formatted HSL string' onclick='copyText( hslCssStr(...hsv2hsl(color.h,color.s,color.v)) )'></div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -489,10 +524,12 @@
 		let draggingGrid = false;
 		let draggingStrip = false;
 		selectionGrid.addEventListener('mousedown', (e) => {
+			e.preventDefault();
 			draggingGrid = true;
 			selectSaturationValue(e);
 		});
 		selectionStrip.addEventListener('mousedown', (e) => {
+			e.preventDefault();
 			draggingStrip = true;
 			selectHue(e);
 		});
