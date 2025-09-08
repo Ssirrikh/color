@@ -12,6 +12,8 @@
 			--text-light: #e8eaed;
 			--font-medium: 2vmin;
 			--font-large: 2.5vmin;
+
+			--widget-border-radius: 8px;
 		}
 
 		* {
@@ -50,10 +52,10 @@
 
 		#main {
 			background-color: #444;
-			border-radius: 8px;
+			border-radius: var(--widget-border-radius);
 			filter: drop-shadow(0 0 4px #00000044);
 			/* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); */
-			overflow: hidden;
+			/* overflow: hidden; */
 			position: absolute;
 			width: 80vmin;
 			height: 50vmin;
@@ -65,6 +67,7 @@
 			color: var(--text-light);
 			background-color: #222;
 			border-bottom: 1px solid #555;
+			border-radius: var(--widget-border-radius) var(--widget-border-radius) 0 0;
 			/* filter: drop-shadow(0 0 1px #000); */
 			padding: 0.75vmin 1vmin;
 			font-size: var(--font-large);
@@ -112,6 +115,17 @@
 		#hue-slider-bg {
 			background: linear-gradient(to right,hsl(0,100%,50%),hsl(60,100%,50%),hsl(120,100%,50%),hsl(180,100%,50%),hsl(240,100%,50%),hsl(300,100%,50%),hsl(360,100%,50%));
 			height: 100%;
+		}
+		#hue-slider-handle {
+			--w: 5px;
+			--c: black;
+			transform: translate(-50%,0);
+			position: relative;
+			width: 0; 
+			height: 0; 
+			border-left: var(--w) solid transparent;
+			border-right: var(--w) solid transparent;
+			border-bottom: var(--w) solid var(--c);
 		}
 
 		#color-rand {
@@ -268,7 +282,7 @@
 			v : 0.9, // on [0,1]
 
 			// force input (clamped)
-			setH : (h = 0) => {  color.h = Math.min(Math.max(0,h),360); },
+			setH : (h = 0) => {  color.h = Math.min(Math.max(0,h),359.99); },
 			setS : (s = 0) => {  color.h = Math.min(Math.max(0,s),1); },
 			setV : (v = 0) => {  color.h = Math.min(Math.max(0,v),1); },
 			setSV : (s = 0, v = 0) => {
@@ -417,6 +431,7 @@
 			drawColorRect(color.h);
 			handleSaturationLightness.style.backgroundColor = color.getHSL();
 			colorRect.style.backgroundColor = color.getHSL();
+			handleHue.style.left = `${100 * color.h/360}%`;
 		}
 		function refreshSaturationValue () {
 			handleSaturationLightness.style.left = (100 * color.s) + '%';
@@ -454,7 +469,7 @@
 			const b = selectionStrip.getBoundingClientRect();
 			const x = mouseEvent.clientX - b.left;
 			// update color
-			color.setH(360 * x/b.width);
+			color.setH(359 * x/b.width);
 			refreshText();
 			// refresh UI
 			refreshHue();
