@@ -16,6 +16,9 @@
 
 			--fluid-font-size: max(2.5vh, calc(1rem + 0.3vw));
 			--widget-border-radius: calc(0.5 * var(--fluid-font-size));
+			--width-picker: 20em;
+			--height-picker: 15em;
+			--width-inputs: 12em;
 		}
 
 		* {
@@ -44,7 +47,7 @@
 
 		/* ******************************* */
 
-		/**** FLEXBOX UTILITY ****/
+		/**** FLEXBOX UTILS ****/
 
 		.flex-sep {
 			width: 0;
@@ -77,20 +80,39 @@
 			justify-content: center;
 		}
 
+		/**** SCREENREADER UTILS ****/
+
+		.sr-only {
+			border: 0;
+			clip: rect(0,0,0,0);
+			overflow: hidden;
+
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			margin: -1px;
+			white-space: nowrap;
+		}
+
 
 
 		/* ******************************* */
 
-		#main {
-			background-color: transparent;
+		#content {
 			filter: drop-shadow(0 0 4px #00000044);
 			/* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); */
+			background-color: transparent;
 			position: absolute;
 			top: 50%;
 			left: 50%;
 			transform: translate(-50%,-50%);
+
+			align-items: center;
+			gap: 2em;
 		}
-		#header-bar {
+		#main {
+		}
+		#picker-header-bar {
 			color: var(--text-light);
 			background-color: #222;
 			/* border-bottom: 1px solid #555; */
@@ -107,6 +129,14 @@
 
 			align-items: center;
 		}
+		#color-palette {
+			color: var(--text-light);
+			border: 1px solid red;
+			width: calc(var(--width-picker) + var(--width-inputs));
+			font-size: 0.8em;
+
+			gap: 2em;
+		}
 
 
 
@@ -114,15 +144,15 @@
 		#select-saturation-lightness {
 			display: block;
 			position: relative; /* need dummy position so <color-handle> can position itself correctly */
-			width: 20em;
-			height: 15em;
+			width: var(--width-picker);
+			height: var(--height-picker);
 		}
 		#select-hue {
 			width: 100%;
 			height: 1em;
 		}
 		#display-color {
-			width: 12em;
+			width: var(--width-inputs);
 			padding: 0.5em 0.25em;
 			font-size: 0.8em;
 
@@ -164,7 +194,7 @@
 			border-bottom: var(--w) solid var(--c);
 		}
 
-		#header-bar > h1 {
+		#picker-header-bar > h1 {
 			font-size: 1em;
 			font-weight: normal;
 		}
@@ -224,8 +254,50 @@
 
 			flex-shrink: 0; /* prevent shrinking */
 		}
-		.color-middle + .color-copy {
-			margin-left: 1vmin;
+
+		#color-palette > h2 {
+			background-color: #222;
+			border-radius: 0.5em 0 0 0.5em;
+			padding: 0.5em;
+			font-size: 1em;
+			font-weight: normal;
+
+			flex-shrink: 0;
+		}
+		#palette-squares {
+			background-color: #444;
+			padding: 0.5em;
+			height: 100%;
+			gap: 0.5em;
+			flex-grow: 1;
+		}
+		.color-square {
+			background-color: red;
+			border: 1px solid #555;
+			width: 1em;
+			height: 1em;
+		}
+		#palette-save {
+			background-color: #222;
+			border-radius: 0 0.5em 0.5em 0;
+
+			display: inline-block;
+			width: 1em;
+			height: 1em;
+
+			flex-shrink: 0;
+		}
+
+		#palette-stub {
+			color: var(--text-light-subtitle);
+			background-color: #444;
+			border: 1px solid #555;
+			border-radius: 0.5em;
+
+			width: 20em;
+			padding: 0.5em;
+			font-size: 0.8em;
+			text-align: center;
 		}
 
 
@@ -241,53 +313,82 @@
 		<path id='curve-top' fill='#222222' fill-opacity='1' d='M 0 204 L 25 210 C 150 240 270 130 335 90 C 400 50 466 20 566 10 L 666 0 L 0 0 Z'></path>
 	</svg>
 
-	<div id='main' class='flex-col'>
-		<div id='header-bar' class='flex-row'>
-			<h1>Color Picker</h1>
-			<button id='color-rand' title='Random color' onclick='randColor()'></button>
-		</div>
-		<div id='color-picker' class='flex-row'>
-			<div class='flex-col'>
-				<div id='select-saturation-lightness'>
-					<canvas id='saturation-lightness-rect'></canvas>
-					<div id='color-handle'></div>
+	<div id='content' class='flex-col'>
+		<!-- color picker -->
+		<div id='main' class='flex-col'>
+			<div id='picker-header-bar' class='flex-row'>
+				<h1>Color Picker</h1>
+				<button id='color-rand' title='Random color' onclick='randColor()'></button>
+			</div>
+			<div id='color-picker' class='flex-row'>
+				<div class='flex-col'>
+					<div id='select-saturation-lightness'>
+						<canvas id='saturation-lightness-rect'></canvas>
+						<div id='color-handle'></div>
+					</div>
+					<div id='select-hue'>
+						<div id='hue-slider-bg'></div>
+						<div id='hue-slider-handle'></div>
+					</div>
 				</div>
-				<div id='select-hue'>
-					<div id='hue-slider-bg'></div>
-					<div id='hue-slider-handle'></div>
+				<div id='display-color' class='flex-col'>
+					<div class='flex-col'>
+						<div id='color-rect'></div>
+						<input id='text-hex' class='color-input' type='text' spellcheck='false' aria-label='Hexa-decimal input' value='#ff0000'>
+					</div>
+					<div class='flex-col'>
+						<p class='color-label' aria-hidden='true'>RGB</p>
+						<div class='flex-row color-row'>
+							<label class='sr-only' for='text-rgb'>RGB input</label>
+							<input id='text-rgb' class='color-input' type='text' spellcheck='false' aria-label='RGB input' value='255, 0, 0'>
+							<button class='color-copy' title='Copy formatted RGB' onclick='copyText( rgbCssStr(...hsv2rgb(color.h,color.s,color.v)) )'></button>
+						</div>
+						<p class='color-label' aria-hidden='true'>HSV</p>
+						<div class='flex-row color-row'>
+							<label class='sr-only' for='text-hsv'>HSV input</label>
+							<input id='text-hsv' class='color-input' type='text' spellcheck='false' aria-label='HSV input' value='0, 100%, 100%'>
+							<button class='color-copy' title='Copy formatted HSV' onclick='copyText( hsvCssStr(color.h,color.s,color.v) )'></button>
+						</div>
+						<p class='color-label' aria-hidden='true'>HSL</p>
+						<div class='flex-row color-row'>
+							<label class='sr-only' for='text-hsl'>HSL input</label>
+							<input id='text-hsl' class='color-input' type='text' spellcheck='false' aria-label='HSL input' value='0, 100%, 50%'>
+							<button class='color-copy' title='Copy formatted HSL' onclick='copyText( hslCssStr(...hsv2hsl(color.h,color.s,color.v)) )'></button>
+						</div>
+					</div>
 				</div>
 			</div>
-			<div id='display-color' class='flex-col'>
-				<div class='flex-col'>
-					<div id='color-rect'></div>
-					<input id='text-hex' class='color-input' type='text' spellcheck='false' value='#ff0000'>
-				</div>
-				<div class='flex-col'>
-					<p class='color-label' aria-hidden='true'>RGB</p>
-					<div class='flex-row color-row'>
-						<input id='text-rgb' class='color-input' type='text' spellcheck='false' aria-label='RGB' value='255, 0, 0'>
-						<button class='color-copy' title='Copy formatted RGB' onclick='copyText( rgbCssStr(...hsv2rgb(color.h,color.s,color.v)) )'></button>
-					</div>
-					<p class='color-label' aria-hidden='true'>HSV</p>
-					<div class='flex-row color-row'>
-						<input id='text-hsv' class='color-input' type='text' spellcheck='false' aria-label='HSV' value='0, 100%, 100%'>
-						<button class='color-copy' title='Copy formatted HSV' onclick='copyText( hsvCssStr(color.h,color.s,color.v) )'></button>
-					</div>
-					<p class='color-label' aria-hidden='true'>HSL</p>
-					<div class='flex-row color-row'>
-						<input id='text-hsl' class='color-input' type='text' spellcheck='false' aria-label='HSL' value='0, 100%, 50%'>
-						<button class='color-copy' title='Copy formatted HSL' onclick='copyText( hslCssStr(...hsv2hsl(color.h,color.s,color.v)) )'></button>
-					</div>
-				</div>
-			</div>
 		</div>
+		<!-- color palette -->
+		<div id='palette-stub'>Color palette coming soon...</div>
+		<!-- <div id='color-palette' class='flex-row'>
+			<h2>Saved Palette:</h2>
+			<div id='palette-squares' class='flex-row'>
+				<div class='color-square'></div>
+				<div class='color-square'></div>
+				<div class='color-square'></div>
+			</div>
+			<button id='palette-bookmark' title='Bookmark saved color palette'></button>
+		</div> -->
 	</div>
+
+	
 
 
 
 	<script type='text/javascript' src='script/color.js'></script>
 
 	<script type='text/javascript'>
+
+		//// REFERENCES ////
+
+		// https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
+
+		// https://www.w3schools.com/js/js_arrays.asp
+		// https://www.google.com/search?q=color+picker
+		// https://www.youtube.com
+		
+
 
 		//// DOM ACCESS ////
 
