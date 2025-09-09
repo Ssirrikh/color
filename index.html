@@ -30,6 +30,10 @@
 		div {
 			display: block;
 		}
+		button {
+			border: none;
+			font-size: 1em;
+		}
 		input {
 			/* remove default formatting */
 			border: none;
@@ -240,7 +244,7 @@
 	<div id='main' class='flex-col'>
 		<div id='header-bar' class='flex-row'>
 			<h1>Color Picker</h1>
-			<div id='color-rand' title='Random color' onclick='randColor()'></div>
+			<button id='color-rand' title='Random color' onclick='randColor()'></button>
 		</div>
 		<div id='color-picker' class='flex-row'>
 			<div class='flex-col'>
@@ -259,20 +263,20 @@
 					<input id='text-hex' class='color-input' type='text' spellcheck='false' value='#ff0000'>
 				</div>
 				<div class='flex-col'>
-					<p class='color-label'>RGB</p>
+					<p class='color-label' aria-hidden='true'>RGB</p>
 					<div class='flex-row color-row'>
-						<input id='text-rgb' class='color-input' type='text' spellcheck='false' value='255, 0, 0'>
-						<div class='color-copy' title='Copy CSS-formatted RGB string' onclick='copyText( rgbCssStr(...hsv2rgb(color.h,color.s,color.v)) )'></div>
+						<input id='text-rgb' class='color-input' type='text' spellcheck='false' aria-label='RGB' value='255, 0, 0'>
+						<button class='color-copy' title='Copy formatted RGB' onclick='copyText( rgbCssStr(...hsv2rgb(color.h,color.s,color.v)) )'></button>
 					</div>
-					<p class='color-label'>HSV</p>
+					<p class='color-label' aria-hidden='true'>HSV</p>
 					<div class='flex-row color-row'>
-						<input id='text-hsv' class='color-input' type='text' spellcheck='false' value='0, 100%, 100%'>
-						<div class='color-copy' title='Copy CSS-formatted HSV string' onclick='copyText( hsvCssStr(color.h,color.s,color.v) )'></div>
+						<input id='text-hsv' class='color-input' type='text' spellcheck='false' aria-label='HSV' value='0, 100%, 100%'>
+						<button class='color-copy' title='Copy formatted HSV' onclick='copyText( hsvCssStr(color.h,color.s,color.v) )'></button>
 					</div>
-					<p class='color-label'>HSL</p>
+					<p class='color-label' aria-hidden='true'>HSL</p>
 					<div class='flex-row color-row'>
-						<input id='text-hsl' class='color-input' type='text' spellcheck='false' value='0, 100%, 50%'>
-						<div class='color-copy' title='Copy CSS-formatted HSL string' onclick='copyText( hslCssStr(...hsv2hsl(color.h,color.s,color.v)) )'></div>
+						<input id='text-hsl' class='color-input' type='text' spellcheck='false' aria-label='HSL' value='0, 100%, 50%'>
+						<button class='color-copy' title='Copy formatted HSL' onclick='copyText( hslCssStr(...hsv2hsl(color.h,color.s,color.v)) )'></button>
 					</div>
 				</div>
 			</div>
